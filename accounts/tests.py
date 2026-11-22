@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model  # type: ignore[import-untyped]
 from django.test import TestCase  # type: ignore[import-untyped]
+from django.urls import reverse
 
 
 class UsersManagersTests(TestCase):
@@ -26,3 +27,26 @@ class UsersManagersTests(TestCase):
         self.assertTrue(admin_user.is_active)
         self.assertTrue(admin_user.is_staff)
         self.assertTrue(admin_user.is_superuser)
+
+
+class SignupPageTests(TestCase):
+    def test_signup_page_status_code(self):
+        response = self.client.get(reverse("signup"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_signup_page_template(self):
+        response = self.client.get(reverse("signup"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "registration/signup.html")
+
+    def test_signup_form(self):
+        response = self.client.post(
+            reverse("signup"),
+            {
+                "username": "newuser",
+                "email": "newuser@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+        self.assertIn(response.status_code, (200, 302))
