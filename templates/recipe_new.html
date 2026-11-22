@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h1>New Recipe</h1>
+<form action="" method="post">
+    {% csrf_token %}
+    <h4>Recipe Information</h4>
+    {{ form|crispy }}
+  <hr>
+        <h4>Ingredients</h4>
+
+        {{ ingredient_formset.management_form }}
+        {{ ingredient_formset.non_form_errors }}
+
+        {% for ingredient_form in ingredient_formset %}
+            <div class="card p-3 mb-3">
+                {{ ingredient_form.as_p }}
+            </div>
+        {% endfor %}
+    <button class = "btn btn-success ms-2" type="submit">Save Recipe</button>
+</form>
+{% endblock content %}

@@ -12,13 +12,17 @@
         </span> &middot;
         <span class="text-muted">by {{ recipe.owner_id }}</span>
     </div>
+    {% if recipe.owner_id.pk == request.user.pk%}
     <div class="card-body">
         {{ recipe.body }}
     </div>
+
     <div class="card-footer text-center text-muted">
         <a href="{% url 'recipe_edit' recipe.pk %}"">Edit</a>
         <a href="{% url 'recipe_delete' recipe.pk %}"">Delete</a>
+
     </div>
+        {% endif %}
 </div>
 <br/>
 {% endfor %}
