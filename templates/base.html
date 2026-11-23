@@ -18,26 +18,16 @@
         crossorigin="anonymous"
     >
 
-    <style>
-        .navbar-logo {
-            height: 60px;
-            width: auto;
-            object-fit: contain;
-        }
+    <!-- Application CSS: loaded after Bootstrap -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-        .navbar-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-        }
-    </style>
+    {% block extra_css %}{% endblock extra_css %}
 </head>
 
 <body>
 
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary" aria-label="Main navigation">
         <div class="container-fluid">
 
             <!-- Website Logo and Name -->
@@ -92,9 +82,9 @@
                     <li class="nav-item">
                         <a
                             class="nav-link"
-                            href="#"
+                            href="{% url 'recipe_api_search' %}"
                         >
-                            Import a Recipe
+                            Import Recipes
                         </a>
                     </li>
 

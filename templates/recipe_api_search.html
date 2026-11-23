@@ -1,0 +1,107 @@
+
+{% extends "base.html" %}
+
+{% block title %}Find Recipes{% endblock title %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2>Find New Recipes</h2>
+
+    <p class="text-muted">
+        Discover recipes from TheMealDB and
+        import them into your cookbook.
+    </p>
+
+    <form method="get" class="mb-4">
+
+        <div class="input-group">
+
+            <input
+                type="text"
+                name="q"
+                class="form-control"
+                placeholder="Search recipes..."
+                value="{{ query }}"
+                required
+            >
+
+            <button
+                class="btn btn-primary"
+                type="submit"
+            >
+                Search
+            </button>
+
+        </div>
+
+    </form>
+
+    {% if error %}
+        <div class="alert alert-danger">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <div class="row">
+
+        {% for meal in meals %}
+
+        <div class="col-md-4 mb-4">
+
+            <div class="card h-100">
+
+                <img
+                    src="{{ meal.strMealThumb }}"
+                    class="card-img-top"
+                    alt="{{ meal.strMeal }}"
+                >
+
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        {{ meal.strMeal }}
+                    </h5>
+
+                    <p class="text-muted">
+                        {{ meal.strCategory }}
+                        -
+                        {{ meal.strArea }}
+                    </p>
+
+                    <form
+                        method="post"
+                        action="{% url 'recipe_api_import' meal.idMeal %}"
+                    >
+
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="btn btn-success w-100"
+                        >
+                            Import Recipe
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% empty %}
+
+            {% if query and not error %}
+                <p>No matching recipes found.</p>
+            {% endif %}
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock content %}

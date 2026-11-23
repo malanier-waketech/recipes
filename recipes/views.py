@@ -1,14 +1,23 @@
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, FormView, ListView
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from .forms import CommentForm, RecipeIngredientFormSet
-from .models import Recipe
+from .models import Category, Ingredient, Recipe, RecipeIngredient
+from .services.themealdb import (
+    MealDBError,
+    extract_ingredients,
+    get_meal,
+    search_meals,
+)
 
 # Create your views here.
 
@@ -135,3 +144,100 @@ class RecipeCreateView(LoginRequiredMixin, CreateView):
             ingredient_formset.save()
 
         return redirect(self.get_success_url())
+
+
+## Search View
+@login_required
+def recipe_api_search(request):
+    """Search TheMealDB for recipes."""
+
+    query = request.GET.get("q", "").strip()
+    meals = []
+    error = None
+
+    if query:
+        try:
+            meals = search_meals(query)
+        except MealDBError as exc:
+            error = str(exc)
+
+    return render(
+        request,
+        "recipe_api_search.html",
+        {
+            "query": query,
+            "meals": meals,
+            "error": error,
+        },
+    )
+
+
+## Import View
+@login_required
+@require_POST
+def recipe_api_import(request, meal_id):
+    """Import a meal into the user's cookbook."""
+
+    try:
+        meal = get_meal(meal_id)
+    except MealDBError as exc:
+        messages.error(request, str(exc))
+        return redirect("recipe_api_search")
+
+    if not meal:
+        messages.error(request, "Recipe not found.")
+        return redirect("recipe_api_search")
+
+    # Prevent duplicate imports for this user.
+    existing = Recipe.objects.filter(
+        owner_id=request.user,
+        themealdb_id=meal_id,
+    ).first()
+
+    if existing:
+        messages.info(request, "Recipe already imported.")
+        return redirect(existing.get_absolute_url())
+
+    with transaction.atomic():
+        category_name = (meal.get("strCategory") or "Uncategorized").strip()
+
+        category, created = Category.objects.get_or_create(
+            name=category_name,
+            owner_id=request.user,
+        )
+
+        recipe = Recipe.objects.create(
+            title=meal.get("strMeal") or "Untitled Recipe",
+            description=(
+                f"Imported from TheMealDB - "
+                f"{meal.get('strArea') or 'International'} cuisine"
+            ),
+            instructions=meal.get("strInstructions") or "",
+            category=category,
+            owner_id=request.user,
+            difficulty="easy",
+            prep_time=0,
+            cook_time=0,
+            servings=1,
+            themealdb_id=meal_id,
+            image_url=meal.get("strMealThumb") or "",
+            source_url=meal.get("strSource") or "",
+        )
+
+        for item in extract_ingredients(meal):
+            ingredient, created = Ingredient.objects.get_or_create(
+                name=item["name"],
+            )
+
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient=ingredient,
+                measurement=item["measurement"],
+            )
+
+    messages.success(
+        request,
+        f"{recipe.title} was imported successfully!",
+    )
+
+    return redirect(recipe.get_absolute_url())

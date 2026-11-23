@@ -8,19 +8,37 @@ from .models import (
     RecipeIngredient,
 )
 
+
 # --------------------------------------------------
 # INLINE ADMIN CLASSES
 # --------------------------------------------------
-
-
 class RecipeIngredientInline(admin.TabularInline):
-    """Allow ingredients to be managed within a recipe."""
+    """Manage recipe ingredients directly within a recipe."""
 
     model = RecipeIngredient
-    extra = 1
+
+    # Display three empty rows when adding a recipe.
+    extra = 3
+
+    # Allow searching for existing ingredients.
     autocomplete_fields = ["ingredient"]
-    fields = ["ingredient", "quantity", "unit"]
+
+    # Display all ingredient measurement fields.
+    fields = [
+        "ingredient",
+        "quantity",
+        "unit",
+        "measurement",
+    ]
+
+    # Allow navigation to the ingredient relationship.
     show_change_link = True
+
+    # Make ingredient rows removable.
+    can_delete = True
+
+    # Show existing rows plus three empty rows.
+    max_num = 50
 
 
 class CommentInline(admin.TabularInline):
@@ -105,6 +123,7 @@ class RecipeAdmin(admin.ModelAdmin):
                 "fields": (
                     "source_name",
                     "source_id",
+                    "themealdb_id",
                     "source_url",
                     "image_url",
                 ),
@@ -128,6 +147,7 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
         "ingredient",
         "quantity",
         "unit",
+        "measurement",
     ]
 
     list_filter = [
@@ -147,7 +167,10 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
 
     list_per_page = 25
 
-    ordering = ["recipe__title", "ingredient__name"]
+    ordering = [
+        "recipe__title",
+        "ingredient__name",
+    ]
 
 
 # --------------------------------------------------

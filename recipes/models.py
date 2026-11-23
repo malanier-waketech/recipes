@@ -89,6 +89,24 @@ class Recipe(models.Model):
         """Return total preparation and cooking time."""
         return self.prep_time + self.cook_time
 
+    # External API information
+    themealdb_id = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+
+    image_url = models.URLField(
+        max_length=500,
+        blank=True,
+    )
+
+    source_url = models.URLField(
+        max_length=500,
+        blank=True,
+    )
+
 
 class RecipeIngredient(models.Model):
     """Links ingredients to recipes with measurements."""
@@ -104,8 +122,23 @@ class RecipeIngredient(models.Model):
     )
     unit = models.CharField(max_length=50, blank=True)
 
+    measurement = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Quantity and unit, such as 2 cups or 1 tbsp.",
+    )
+
     def __str__(self):
-        return f"{self.quantity or ''} {self.unit} {self.ingredient.name}".strip()
+        """Display ingredient with its measurement."""
+
+        measurement = self.measurement.strip()
+
+        if not measurement:
+            quantity = str(self.quantity) if self.quantity is not None else ""
+            measurement = f"{quantity} {self.unit}".strip()
+
+        return f"{measurement} {self.ingredient.name}".strip()
 
 
 class Comment(models.Model):

@@ -2,36 +2,375 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
-{% block content %}
-<div class="recipe-entry">
-    <h2>{{object.title}}</h2>
-    <p>by {{object.owner_id}}</p>
-    <p>{{object.description}}</p>
-</div>
-<hr>
+{% block title %}{{ recipe.title }} | Ctrl + Alt + Eat{% endblock title %}
 
-<h4>Comments</h4>
-{% for comment in recipe.comment_set.all %}
-<p>
-    {{comment.owner_id}} &middot; {{comment}}
-</p>
-{% endfor %}
-<hr>
-<div>
-    <h4>Add A Comment</h4>
-    <form action="" method="post"> 
-        {% csrf_token %}
-        {{ form|crispy }}
-        <button class="btn btn-success ms-2" type="submit">Save</button>
-    </form>
-</div>
-<div>
-        {% if recipe.owner_id.pk == request.user.pk%}
-    <p>
-        <a href="{% url 'recipe_edit' recipe.pk %}">Edit</a>
-        <a href="{% url 'recipe_delete' recipe.pk %}">Delete</a>
-    </p>
+{% block content %}
+
+<div class="container mt-4 mb-5">
+
+    <!-- Recipe Header -->
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h2 class="fw-bold">{{ recipe.title }}</h2>
+
+            <p class="text-muted mb-1">
+                Added by {{ recipe.owner_id }}
+            </p>
+
+            {% if recipe.category %}
+                <span class="badge bg-primary">
+                    {{ recipe.category.name }}
+                </span>
             {% endif %}
-    <p> Back to <a href="{% url 'recipe_list' %}">All Recipes</a>.</p>
+
+            {% if recipe.themealdb_id %}
+                <span class="badge bg-info text-dark">
+                    Imported from TheMealDB
+                </span>
+            {% endif %}
+        </div>
+
+        <!-- Favorite Indicator -->
+        <div>
+            {% if recipe.is_favorite %}
+                <span class="text-danger fs-2"
+                      title="Favorite Recipe"
+                      aria-label="Favorite Recipe">
+                    &#9829;
+                </span>
+            {% else %}
+                <span class="text-secondary fs-2"
+                      title="Not a Favorite"
+                      aria-label="Not a Favorite">
+                    &#9825;
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recipe Image -->
+    {% if recipe.image_url %}
+        <div class="mb-4">
+            <img
+                src="{{ recipe.image_url }}"
+                alt="{{ recipe.title }}"
+                class="img-fluid rounded shadow-sm"
+                style="max-height: 400px; width: 100%; object-fit: cover;"
+            >
+        </div>
+    {% endif %}
+
+    <!-- Recipe Description -->
+    <div class="mb-4">
+        <h4>Description</h4>
+
+        {% if recipe.description %}
+            <p>{{ recipe.description|linebreaksbr }}</p>
+        {% else %}
+            <p class="text-muted">
+                No description available.
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Recipe Details -->
+    <div class="card mb-4 shadow-sm">
+
+        <div class="card-header bg-light">
+            <h4 class="mb-0">Recipe Details</h4>
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3">
+
+                <!-- Category -->
+                <div class="col-md-4">
+                    <strong>Category</strong>
+                    <p class="mb-0">
+                        {% if recipe.category %}
+                            {{ recipe.category.name }}
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Difficulty -->
+                <div class="col-md-4">
+                    <strong>Difficulty</strong>
+                    <p class="mb-0">
+                        {% if recipe.difficulty %}
+                            {{ recipe.get_difficulty_display }}
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Servings -->
+                <div class="col-md-4">
+                    <strong>Servings</strong>
+                    <p class="mb-0">
+                        {{ recipe.servings|default_if_none:"Not specified" }}
+                    </p>
+                </div>
+
+                <!-- Preparation Time -->
+                <div class="col-md-4">
+                    <strong>Preparation Time</strong>
+                    <p class="mb-0">
+                        {% if recipe.prep_time %}
+                            {{ recipe.prep_time }} minutes
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Cooking Time -->
+                <div class="col-md-4">
+                    <strong>Cooking Time</strong>
+                    <p class="mb-0">
+                        {% if recipe.cook_time %}
+                            {{ recipe.cook_time }} minutes
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Total Time -->
+                <div class="col-md-4">
+                    <strong>Total Time</strong>
+                    <p class="mb-0">
+                        {% if recipe.prep_time or recipe.cook_time %}
+                            {{ recipe.total_time }} minutes
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingredients -->
+    <div class="card mb-4 shadow-sm">
+
+        <div class="card-header bg-light">
+            <h4 class="mb-0">Ingredients</h4>
+        </div>
+
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+
+                {% for item in recipe.recipe_ingredients.all %}
+                    <li class="list-group-item">
+
+                        {% if item.measurement %}
+                            <strong>{{ item.measurement }}</strong>
+                        {% else %}
+                            {% if item.quantity != None %}
+                                <strong>{{ item.quantity }}</strong>
+                            {% endif %}
+
+                            {% if item.unit %}
+                                <strong>{{ item.unit }}</strong>
+                            {% endif %}
+                        {% endif %}
+
+                        {{ item.ingredient.name }}
+
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">
+                        No ingredients have been added.
+                    </li>
+                {% endfor %}
+
+            </ul>
+        </div>
+    </div>
+
+    <!-- Cooking Instructions -->
+    <div class="card mb-4 shadow-sm">
+
+        <div class="card-header bg-light">
+            <h4 class="mb-0">Cooking Instructions</h4>
+        </div>
+
+        <div class="card-body">
+
+            {% if recipe.instructions %}
+                {{ recipe.instructions|linebreaks }}
+            {% else %}
+                <p class="text-muted mb-0">
+                    No cooking instructions available.
+                </p>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- Recipe Source -->
+    {% if recipe.source_url or recipe.themealdb_id %}
+        <div class="card mb-4 shadow-sm">
+
+            <div class="card-header bg-light">
+                <h4 class="mb-0">Recipe Source</h4>
+            </div>
+
+            <div class="card-body">
+
+                {% if recipe.themealdb_id %}
+                    <p>
+                        <strong>Imported From:</strong>
+                        TheMealDB
+                    </p>
+
+                    <p>
+                        <strong>TheMealDB Recipe ID:</strong>
+                        {{ recipe.themealdb_id }}
+                    </p>
+                {% endif %}
+
+                {% if recipe.source_url %}
+                    <a
+                        href="{{ recipe.source_url }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-outline-primary btn-sm"
+                    >
+                        View Original Recipe
+                    </a>
+                {% endif %}
+
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Recipe Dates -->
+    <div class="card mb-4 shadow-sm">
+
+        <div class="card-header bg-light">
+            <h4 class="mb-0">Recipe Information</h4>
+        </div>
+
+        <div class="card-body">
+            {% if recipe.created_at %}
+                <p class="mb-2">
+                    <strong>Date Added:</strong>
+                    {{ recipe.created_at|date:"F j, Y" }}
+                </p>
+            {% endif %}
+
+            {% if recipe.updated_at %}
+                <p class="mb-0">
+                    <strong>Last Updated:</strong>
+                    {{ recipe.updated_at|date:"F j, Y" }}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Comments -->
+    <div class="card mb-4 shadow-sm">
+
+        <div class="card-header bg-light">
+            <h4 class="mb-0">Comments</h4>
+        </div>
+
+        <div class="card-body">
+
+            {% for comment in recipe.comment_set.all %}
+                <div class="border-bottom pb-3 mb-3">
+
+                    <strong>{{ comment.owner_id }}</strong>
+
+                    {% if comment.created_at %}
+                        <small class="text-muted ms-2">
+                            {{ comment.created_at|date:"M d, Y" }}
+                        </small>
+                    {% endif %}
+
+                    <p class="mb-0 mt-2">
+                        {{ comment }}
+                    </p>
+
+                </div>
+            {% empty %}
+                <p class="text-muted">
+                    No comments yet. Be the first to comment!
+                </p>
+            {% endfor %}
+
+        </div>
+    </div>
+
+    <!-- Add Comment -->
+    {% if user.is_authenticated %}
+        <div class="card mb-4 shadow-sm">
+
+            <div class="card-header bg-light">
+                <h4 class="mb-0">Add a Comment</h4>
+            </div>
+
+            <div class="card-body">
+
+                <form action="" method="post">
+                    {% csrf_token %}
+
+                    {{ form|crispy }}
+
+                    <button
+                        class="btn btn-success mt-2"
+                        type="submit"
+                    >
+                        Save Comment
+                    </button>
+                </form>
+
+            </div>
+        </div>
+    {% else %}
+        <p>
+            Please log in to leave a comment.
+        </p>
+    {% endif %}
+
+    <!-- Recipe Actions -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+
+        <a
+            href="{% url 'recipe_list' %}"
+            class="btn btn-outline-secondary"
+        >
+            Back to All Recipes
+        </a>
+
+        {% if recipe.owner_id.pk == request.user.pk %}
+            <div class="d-flex gap-2">
+
+                <a
+                    href="{% url 'recipe_edit' recipe.pk %}"
+                    class="btn btn-primary"
+                >
+                    Edit Recipe
+                </a>
+
+                <a
+                    href="{% url 'recipe_delete' recipe.pk %}"
+                    class="btn btn-outline-danger"
+                >
+                    Delete Recipe
+                </a>
+
+            </div>
+        {% endif %}
+
+    </div>
+
 </div>
+
 {% endblock content %}

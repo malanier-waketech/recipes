@@ -6,6 +6,8 @@ from .views import (
     RecipeDetailView,
     RecipeListView,
     RecipeUpdateView,
+    recipe_api_import,
+    recipe_api_search,
 )
 
 urlpatterns = [
@@ -14,4 +16,6 @@ urlpatterns = [
     path("<int:pk>/delete/", RecipeDeleteView.as_view(), name="recipe_delete"),
     path("new/", RecipeCreateView.as_view(), name="recipe_new"),
     path("", RecipeListView.as_view(), name="recipe_list"),
+    path("find/", recipe_api_search, name="recipe_api_search"),
+    path("import/<str:meal_id>/", recipe_api_import, name="recipe_api_import"),
 ]

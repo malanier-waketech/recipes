@@ -1,26 +1,88 @@
-
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock title %}
+{% block title %}Home | Ctrl + Alt + Eat{% endblock title %}
 
 {% block content %}
+<div class="home-dashboard">
     {% if user.is_authenticated %}
-        <h1>Welcome, {{ user.username }}!</h1>
-        <p>Enjoy your stay at Ctrl + Alt + Eat.</p>
+        <section class="dashboard-hero mb-4" aria-labelledby="welcome-heading">
+            <span class="dashboard-eyebrow">YOUR PERSONAL COOKBOOK</span>
+            <h1 id="welcome-heading" class="display-6 fw-bold mt-2">Welcome back, {{ user.username }}!</h1>
+            <p class="lead mb-4">Your personal cookbook is ready. What are we cooking today?</p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'recipe_new' %}" class="btn btn-primary btn-lg">+ Add New Recipe</a>
+                <a href="{% url 'recipe_list' %}" class="btn btn-outline-primary btn-lg">View My Recipes</a>
+            </div>
+        </section>
 
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit">Logout</button>
-        </form>
-        <br/>
-        <p>
-            <a class = "btn btn-primary" href="{% url 'recipe_list'%}" role="button">View My Recipes</a>
-        </p>
+        <section class="mb-4" aria-labelledby="overview-heading">
+            <h2 id="overview-heading" class="h4 mb-3">My Cookbook at a Glance</h2>
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <div class="dashboard-card stat-card h-100">
+                        <div class="stat-label">My Recipes</div>
+                        <div class="stat-value">{{ recipe_count|default:0 }}</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="dashboard-card stat-card h-100">
+                        <div class="stat-label">Favorites</div>
+                        <div class="stat-value">{{ favorite_count|default:0 }}</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="dashboard-card stat-card h-100">
+                        <div class="stat-label">Categories</div>
+                        <div class="stat-value">{{ category_count|default:0 }}</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section aria-labelledby="recent-heading">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h2 id="recent-heading" class="h4 mb-0">Recently Added Recipes</h2>
+                <a href="{% url 'recipe_list' %}" class="link-primary">View All Recipes</a>
+            </div>
+            <div class="row g-3">
+                {% for recipe in recent_recipes %}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <article class="dashboard-card recipe-preview h-100">
+                            <div class="recipe-preview-icon" aria-hidden="true">🍽️</div>
+                            <h3 class="h5 mt-3 mb-2">
+                                <a href="{{ recipe.get_absolute_url }}" class="text-decoration-none">{{ recipe.title }}</a>
+                            </h3>
+                            <p class="text-muted small mb-2">
+                                {% if recipe.difficulty %}{{ recipe.get_difficulty_display }}{% endif %}
+                                {% if recipe.prep_time %} · Prep: {{ recipe.prep_time }} min{% endif %}
+                            </p>
+                            {% if recipe.description %}
+                                <p class="mb-0">{{ recipe.description|truncatewords:20 }}</p>
+                            {% endif %}
+                        </article>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="dashboard-card empty-recipes text-center">
+                            <div class="empty-recipes-icon" aria-hidden="true">📖</div>
+                            <h3 class="h5 mt-2">Your next favorite recipe starts here!</h3>
+                            <p class="text-muted">Add a recipe to start building your cookbook.</p>
+                            <a href="{% url 'recipe_new' %}" class="btn btn-primary">Create a Recipe</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
     {% else %}
-        <h1>Welcome to Ctrl + Alt + Eat!</h1>
-        <p>Please log in to access more features.</p>
-        <a href="{% url 'login' %}">Login</a>
-        <a href="{% url 'signup' %}">Sign Up</a>
+        <section class="dashboard-hero guest-hero text-center" aria-labelledby="guest-welcome-heading">
+            <span class="dashboard-eyebrow">RECIPES & MEAL PLANNING</span>
+            <h1 id="guest-welcome-heading" class="display-5 fw-bold mt-2">Welcome to Ctrl + Alt + Eat!</h1>
+            <p class="lead mx-auto guest-intro">Keep your favorite recipes organized, discover new ideas, and make mealtime easier.</p>
+            <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
+                <a href="{% url 'signup' %}" class="btn btn-primary btn-lg">Get Started</a>
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">Log In</a>
+            </div>
+        </section>
     {% endif %}
+</div>
 {% endblock content %}
-
