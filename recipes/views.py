@@ -1,23 +1,62 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
-from django.views.generic import DetailView, ListView
+from django.urls import reverse, reverse_lazy
+from django.views import View
+from django.views.generic import DetailView, FormView, ListView
+from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
-from .forms import RecipeIngredientFormSet
+from .forms import CommentForm, RecipeIngredientFormSet
 from .models import Recipe
 
-
 # Create your views here.
+
+
+class CommentPost(SingleObjectMixin, FormView):
+    model = Recipe
+    form_class = CommentForm
+    template_name = "recipe_detail.html"
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        comment = form.save(commit=False)
+        comment.recipe = self.object
+        comment.owner_id = self.request.user
+        comment.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        recipe = self.object
+        return reverse("recipe_detail", kwargs={"pk": recipe.pk})
+
+
+class CommentGet(DetailView):
+    model = Recipe
+    template_name = "recipe_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = CommentForm
+        return context
+
+
 class RecipeListView(LoginRequiredMixin, ListView):
     model = Recipe
     template_name = "recipe_list.html"
 
 
-class RecipeDetailView(LoginRequiredMixin, DetailView):
-    model = Recipe
-    template_name = "recipe_detail.html"
+class RecipeDetailView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        view = CommentGet.as_view()
+        return view(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        view = CommentPost.as_view()
+        return view(request, *args, **kwargs)
 
 
 class RecipeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):

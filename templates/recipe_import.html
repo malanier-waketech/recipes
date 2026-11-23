@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="recipe-entry">
+    <h2>{{object.title}}</h2>
+    <p>by {{object.owner_id}}</p>
+    <p>{{object.description}}</p>
+</div>
+<div>
+        {% if recipe.owner_id.pk == request.user.pk%}
+    <p>
+        <a href="{% url 'recipe_edit' recipe.pk %}">Edit</a>
+        <a href="{% url 'recipe_delete' recipe.pk %}">Delete</a>
+    </p>
+            {% endif %}
+    <p> Back to <a href="{% url 'recipe_list' %}">All Recipes</a>.</p>
+</div>
+{% endblock content %}

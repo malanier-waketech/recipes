@@ -74,11 +74,6 @@ class Recipe(models.Model):
     source_url = models.URLField(blank=True)
     image_url = models.URLField(blank=True)
 
-    # Recipe and ingredient relationship
-    ingredients = models.ManyToManyField(
-        Ingredient, through="RecipeIngredient", related_name="recipes"
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     updated_at = models.DateTimeField(auto_now=True)
@@ -111,3 +106,18 @@ class RecipeIngredient(models.Model):
 
     def __str__(self):
         return f"{self.quantity or ''} {self.unit} {self.ingredient.name}".strip()
+
+
+class Comment(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    comment = models.CharField(max_length=140)
+    owner_id = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return self.comment
+
+    def get_absolute_url(self):
+        return reverse("recipe_list")

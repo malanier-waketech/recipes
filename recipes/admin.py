@@ -1,20 +1,44 @@
 from django.contrib import admin
 
-from .models import Category, Ingredient, Recipe, RecipeIngredient
+from .models import (
+    Category,
+    Comment,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+)
+
+# --------------------------------------------------
+# INLINE ADMIN CLASSES
+# --------------------------------------------------
 
 
 class RecipeIngredientInline(admin.TabularInline):
-    """Allow ingredients to be added directly to a recipe."""
+    """Allow ingredients to be managed within a recipe."""
 
     model = RecipeIngredient
-    extra = 3
+    extra = 1
     autocomplete_fields = ["ingredient"]
     fields = ["ingredient", "quantity", "unit"]
+    show_change_link = True
+
+
+class CommentInline(admin.TabularInline):
+    """Display comments within a recipe."""
+
+    model = Comment
+    extra = 0
+    show_change_link = True
+
+
+# --------------------------------------------------
+# RECIPE ADMIN
+# --------------------------------------------------
 
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    """Customize the recipe administration page."""
+    """Customize recipe management."""
 
     list_display = [
         "title",
@@ -26,6 +50,8 @@ class RecipeAdmin(admin.ModelAdmin):
         "is_favorite",
         "created_at",
     ]
+
+    list_display_links = ["title"]
 
     list_filter = [
         "category",
@@ -40,7 +66,15 @@ class RecipeAdmin(admin.ModelAdmin):
         "owner_id__username",
     ]
 
-    inlines = [RecipeIngredientInline]
+    list_per_page = 25
+
+    ordering = ["-created_at"]
+
+    # Display both ingredients and comments.
+    inlines = [
+        RecipeIngredientInline,
+        CommentInline,
+    ]
 
     fieldsets = (
         (
@@ -80,12 +114,63 @@ class RecipeAdmin(admin.ModelAdmin):
     )
 
 
+# --------------------------------------------------
+# RECIPE INGREDIENT ADMIN
+# --------------------------------------------------
+
+
+@admin.register(RecipeIngredient)
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    """Manage recipe ingredient relationships."""
+
+    list_display = [
+        "recipe",
+        "ingredient",
+        "quantity",
+        "unit",
+    ]
+
+    list_filter = [
+        "recipe",
+        "ingredient",
+    ]
+
+    search_fields = [
+        "recipe__title",
+        "ingredient__name",
+    ]
+
+    autocomplete_fields = [
+        "recipe",
+        "ingredient",
+    ]
+
+    list_per_page = 25
+
+    ordering = ["recipe__title", "ingredient__name"]
+
+
+# --------------------------------------------------
+# INGREDIENT ADMIN
+# --------------------------------------------------
+
+
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     """Manage ingredients."""
 
     list_display = ["name"]
+
     search_fields = ["name"]
+
+    ordering = ["name"]
+
+    list_per_page = 25
+
+
+# --------------------------------------------------
+# CATEGORY ADMIN
+# --------------------------------------------------
 
 
 @admin.register(Category)
@@ -93,4 +178,25 @@ class CategoryAdmin(admin.ModelAdmin):
     """Manage recipe categories."""
 
     list_display = ["name"]
+
     search_fields = ["name"]
+
+    ordering = ["name"]
+
+
+# --------------------------------------------------
+# COMMENT ADMIN
+# --------------------------------------------------
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    """Manage recipe comments."""
+
+    list_display = ["recipe", "id"]
+
+    search_fields = ["recipe__title"]
+
+    list_filter = ["recipe"]
+
+    list_per_page = 25

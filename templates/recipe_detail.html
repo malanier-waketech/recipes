@@ -1,11 +1,29 @@
 
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
 
 {% block content %}
 <div class="recipe-entry">
     <h2>{{object.title}}</h2>
     <p>by {{object.owner_id}}</p>
     <p>{{object.description}}</p>
+</div>
+<hr>
+
+<h4>Comments</h4>
+{% for comment in recipe.comment_set.all %}
+<p>
+    {{comment.owner_id}} &middot; {{comment}}
+</p>
+{% endfor %}
+<hr>
+<div>
+    <h4>Add A Comment</h4>
+    <form action="" method="post"> 
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button class="btn btn-success ms-2" type="submit">Save</button>
+    </form>
 </div>
 <div>
         {% if recipe.owner_id.pk == request.user.pk%}

@@ -1,6 +1,7 @@
+from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Recipe, RecipeIngredient
+from .models import Comment, Recipe, RecipeIngredient
 
 RecipeIngredientFormSet = inlineformset_factory(
     Recipe,
@@ -9,3 +10,11 @@ RecipeIngredientFormSet = inlineformset_factory(
     extra=3,
     can_delete=True,
 )
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = {
+            "comment",
+        }
